@@ -69,4 +69,28 @@ class Window(QWidget):
 
         layout = QVBoxLayout()
         layout.addWidget(self.label)
-        layout.addWidget(self.input
+        layout.addWidget(self.input1_label)
+        layout.addWidget(self.input1)
+        layout.addWidget(self.input2_label)
+        layout.addWidget(self.input2)
+        layout.addWidget(self.input3_label)
+        layout.addWidget(self.input3)
+        layout.addWidget(self.input4_label)
+        layout.addWidget(self.input4)
+        layout.addWidget(self.button)
+
+        self.setLayout(layout)
+        self.button.clicked.connect(self.train_network)
+
+def train_network(self):
+    epochs = int(self.input1.text())
+    train_size = float(self.input2.text())
+    val_size = float(self.input3.text())
+    test_size = float(self.input4.text())
+    # TODO: код для обучения нейронной сети с заданными параметрами
+
+if name == "main":
+app = QApplication([])
+window = Window()
+window.show()
+app.exec_()
