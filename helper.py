@@ -33,12 +33,17 @@ train_data, test_data, train_targets, test_targets = train_test_split(
 
 #4 Обучение нейронной сети
 
+from keras.optimizers import Adam
+
 history = model.fit(
     train_data, train_targets,
     batch_size=100,
     epochs=100,
+    learning_rate = 0.001
     validation_data=(test_data, test_targets)
+    optimizer = Adam(lr=learning_rate)
 )
+
 
 #5 Использование нейронной сети для прогнозирования цен активов
 
