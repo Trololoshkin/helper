@@ -1,101 +1,68 @@
-#1 Загрузка данных из CSV-файла с помощью библиотеки Pandas:
-
+from tkinter import *
+from tkinter import filedialog
+from tkinter import ttk
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
 
-data = pd.read_csv('prices.csv')
+def open_file():
+    file_path = filedialog.askopenfilename()
+    data = pd.read_csv(file_path, sep=',', encoding='utf-8')
+    label_file.config(text="Выбранный файл: " + file_path)
+    # Преобразование даты из строки в объект datetime
+    # Удаление столбца "Объём", так как он не используется для прогнозирования
+    data.drop('Объём', axis=1, inplace=True)
 
-# Вывод первых 5 строк данных для проверки
-print(data.head())
+    # Замена запятых на точки и преобразование данных из строкового в числовой формат
+    data['Цена'] = data['Цена'].str.replace(',', '.').astype(float)
+    data['Откр.'] = data['Откр.'].str.replace(',', '.').astype(float)
+    data['Макс.'] = data['Макс.'].str.replace(',', '.').astype(float)
+    data['Мин.'] = data['Мин.'].str.replace(',', '.').astype(float)
+    data['Изм. %'] = data['Изм. %'].str.replace(',', '.').str.replace('%', '').astype(float)
 
-#2 Создание нейронной сети с помощью библиотеки TensorFlow
+    # Удаление строк с отсутствующими значениями
+    data.dropna(inplace=True)
 
-import tensorflow as tf
+    # Нормализация данных
+    scaler = MinMaxScaler()
+    data[['Цена', 'Откр.', 'Макс.', 'Мин.', 'Изм. %']] = scaler.fit_transform(data[['Цена', 'Откр.', 'Макс.', 'Мин.', 'Изм. %']])
 
-model = tf.keras.Sequential([
-  tf.keras.layers.Dense(256, activation='relu'),
-  tf.keras.layers.Dense(256, activation='relu'),
-  tf.keras.layers.Dense(1)
-])
+    # Очистка таблицы от старых данных (если такие есть)
+    for i in tree.get_children():
+        tree.delete(i)
 
-model.compile(optimizer='adam',
-              loss='mse',
-              metrics=['mae'])
-#3 Разделение данных на обучающую и тестовую выборки с помощью функции train_test_split из библиотеки sklearn
+    # Добавление новых данных в таблицу
+    for index, row in data.iterrows():
+        tree.insert('', 'end', values=(row['Дата'], row['Цена'], row['Откр.'], row['Макс.'], row['Мин.'], row['Изм. %']))
 
-from sklearn.model_selection import train_test_split
+root = Tk()
 
-train_data, test_data, train_targets, test_targets = train_test_split(
-    data.drop(columns=['target']), 
-    data['target'], 
-    test_size=0.2, 
-    random_state=42
-)
+# Создание таблицы
+tree = ttk.Treeview(root, columns=('date', 'price', 'open', 'high', 'low', 'change'), show='headings')
 
-#4 Обучение нейронной сети
+# Настройка заголовков столбцов
+tree.column('date', width=120, anchor='center')
+tree.column('price', width=100, anchor='center')
+tree.column('open', width=100, anchor='center')
+tree.column('high', width=100, anchor='center')
+tree.column('low', width=100, anchor='center')
+tree.column('change', width=100, anchor='center')
 
-from keras.optimizers import Adam
+tree.heading('date', text='Дата')
+tree.heading('price', text='Цена')
+tree.heading('open', text='Открытие')
+tree.heading('high', text='Максимум')
+tree.heading('low', text='Минимум')
+tree.heading('change', text='Изменение')
 
-history = model.fit(
-    train_data, train_targets,
-    batch_size=100,
-    epochs=100,
-    learning_rate = 0.001
-    validation_data=(test_data, test_targets)
-    optimizer = Adam(lr=learning_rate)
-)
+# Создание кнопки для выбора файла
+button_file = Button(root, text="Выбрать файл", command=open_file)
+button_file.pack(pady=10)
+
+label_file = Label(root, text="")
+label_file.pack()
 
 
-#5 Использование нейронной сети для прогнозирования цен активов
+label_result = Label(root, text="")
+label_result.pack()
 
-predictions = model.predict(test_data)
-
-#6 Определение момента выставления ордеров на покупку и продажу активов на основе прогноза цен
-#7 Закрытие сделок для получения максимальной прибыли
-#8 Создание графического интерфейса с помощью библиотеки PyQt5
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel, QLineEdit
-from PyQt5.QtCore import Qt
-
-class Window(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Прогнозирование цен активов")
-        self.resize(400, 200)
-
-        self.label = QLabel("Введите параметры нейронной сети:")
-        self.input1_label = QLabel("Количество эпох обучения:")
-        self.input1 = QLineEdit()
-        self.input2_label = QLabel("Размер обучающего набора данных:")
-        self.input2 = QLineEdit()
-        self.input3_label = QLabel("Размер проверочного набора данных:")
-        self.input3 = QLineEdit()
-        self.input4_label = QLabel("Размер тестового набора данных:")
-        self.input4 = QLineEdit()
-        self.button = QPushButton("Обучить")
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.label)
-        layout.addWidget(self.input1_label)
-        layout.addWidget(self.input1)
-        layout.addWidget(self.input2_label)
-        layout.addWidget(self.input2)
-        layout.addWidget(self.input3_label)
-        layout.addWidget(self.input3)
-        layout.addWidget(self.input4_label)
-        layout.addWidget(self.input4)
-        layout.addWidget(self.button)
-
-        self.setLayout(layout)
-        self.button.clicked.connect(self.train_network)
-
-def train_network(self):
-    epochs = int(self.input1.text())
-    train_size = float(self.input2.text())
-    val_size = float(self.input3.text())
-    test_size = float(self.input4.text())
-    # TODO: код для обучения нейронной сети с заданными параметрами
-
-if name == "main":
-app = QApplication([])
-window = Window()
-window.show()
-app.exec_()
+root.mainloop()
